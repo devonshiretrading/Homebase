@@ -961,5 +961,7 @@ def _seed_defaults():
 
 
 if __name__ == "__main__":
+    import os
     app = create_app()
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=True, port=port, host="0.0.0.0")
