@@ -637,6 +637,16 @@
         }
 
         loadAll();
+
+        // Auto-refresh: schedule + now-line every 60s, weather every 15min
+        setInterval(() => {
+            loadSchedule();
+        }, 60 * 1000);
+
+        setInterval(() => {
+            loadWeather();
+            loadRainChart();
+        }, 15 * 60 * 1000);
     </script>
 </body>
 </html>
