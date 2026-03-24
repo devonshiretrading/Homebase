@@ -281,6 +281,30 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.25);
         }
+
+        /* Water gate overlay */
+        .gate-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .gate-content { text-align: center; padding: 40px 24px; }
+        .gate-icon { font-size: 3.5rem; margin-bottom: 16px; }
+        .gate-content h2 { font-size: 1.6rem; margin-bottom: 8px; }
+        .gate-content p { color: #6a6f80; margin-bottom: 24px; }
+        .gate-btn {
+            padding: 14px 32px;
+            border-radius: 8px;
+            border: none;
+            background: #4A90D9;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -337,7 +361,34 @@
         </div>
     </div>
 
+    <!-- Water gate -->
+    <div id="water-gate" class="gate-overlay" style="display: none;">
+        <div class="gate-content">
+            <div class="gate-icon">💧</div>
+            <h2>Drink some water</h2>
+            <p>Take a sip before you continue</p>
+            <button onclick="dismissGate('water')" class="gate-btn">Done — I drank some</button>
+        </div>
+    </div>
+
     <script>
+        // Water gate (speed bump) — every 90 minutes
+        function checkWaterGate() {
+            const lastDismissed = localStorage.getItem('water_gate_dismissed');
+            if (lastDismissed) {
+                const elapsed = Date.now() - parseInt(lastDismissed);
+                if (elapsed < 90 * 60 * 1000) return;
+            }
+            document.getElementById('water-gate').style.display = 'flex';
+        }
+        function dismissGate(type) {
+            if (type === 'water') {
+                localStorage.setItem('water_gate_dismissed', Date.now().toString());
+                document.getElementById('water-gate').style.display = 'none';
+            }
+        }
+        checkWaterGate();
+
         let currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
 
