@@ -26,9 +26,9 @@ Activity templates   ──┘                         AI weekly summary (later)
 
 | Source | Status | Auth | Notes |
 |--------|--------|------|-------|
-| Strava | TODO | OAuth2 | Activities, distance, HR, training load |
+| Strava | Done | OAuth2 | Activities, distance, HR, training load |
 | Open-Meteo | Done | None needed | 7-day forecast, run score algorithm |
-| Office 365 | TODO | MS Graph OAuth2 | Work calendar — the immovable blocks |
+| Office 365 | Done | MS Graph OAuth2 | Work calendar — the immovable blocks |
 | Weekly toggles | Done | N/A | Your weekly decisions (office days, school walk, track club) |
 | Activity templates | Done | N/A | Shorthand dictionary with default durations |
 | Browser geolocation | Done | Browser API | One-time prompt, stored in DB |
@@ -99,6 +99,7 @@ lifeblock/
 ├── templates/
 │   ├── base.html       # Layout with nav + water gate
 │   ├── week.html       # Weekly planner (sidebar + calendar)
+│   ├── mobile.html     # Mobile day view with auto-refresh
 │   └── checkin.html    # Evening check-in form
 ├── static/
 │   ├── css/style.css   # Dark theme styles
@@ -134,8 +135,8 @@ OAuthToken         – stored tokens for external services
 - [x] Browser geolocation
 - [x] Evening check-in page
 - [x] Water gate (speed bump)
-- [ ] Strava OAuth + activity sync
-- [ ] Office 365 calendar sync (or ICS fallback)
+- [x] Strava OAuth + activity sync
+- [x] Office 365 calendar sync
 
 ### Phase 2 — Planning intelligence
 - [ ] Quick natural language entry ("run thursday 7am")
@@ -152,8 +153,8 @@ OAuthToken         – stored tokens for external services
 - [ ] Context-aware suggestions based on toggles + weather + calendar
 
 ### Phase 4 — Polish
-- [ ] Mobile-optimized views
-- [ ] Deploy to EC2
+- [x] Mobile-optimized views
+- [x] Deploy to EC2
 - [ ] Progressive web app (offline support)
 - [ ] Historical trends / weekly review page
 
