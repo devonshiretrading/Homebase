@@ -55,6 +55,12 @@ def create_app():
             templates=templates,
         )
 
+    @app.route("/m/")
+    @app.route("/m")
+    def mobile_view():
+        """Mobile day view."""
+        return render_template("mobile.html")
+
     @app.route("/checkin")
     def checkin_view():
         """Daily check-in page."""
@@ -575,7 +581,7 @@ def create_app():
 
         # Planned blocks
         blocks = PlannedBlock.query.filter(
-            PlannedBlock.date >= start_date, PlannedBlock.date <= end_date
+            PlannedBlock.date >= start_date, PlannedBlock.date < end_date
         ).all()
         for b in blocks:
             event = {
@@ -615,7 +621,7 @@ def create_app():
 
         # Synced calendar events
         cal_events = CalendarEvent.query.filter(
-            CalendarEvent.date >= start_date, CalendarEvent.date <= end_date
+            CalendarEvent.date >= start_date, CalendarEvent.date < end_date
         ).all()
         for c in cal_events:
             is_tentative = c.busy_status == "TENTATIVE"

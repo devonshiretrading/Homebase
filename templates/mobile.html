@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Lifeblock</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            font-size: 14px;
+            -webkit-text-size-adjust: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px 8px;
+            background: #161822;
+            border-bottom: 1px solid #2a2d3a;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .top-bar h1 { font-size: 16px; color: #5ba4cf; }
+        .top-bar .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .top-bar .date-nav button {
+            background: none;
+            border: none;
+            color: #8890a0;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        .top-bar .date-label {
+            font-size: 14px;
+            color: #c0c4d0;
+            font-weight: 500;
+        }
+
+        /* Tab nav */
+        .tab-nav {
+            display: flex;
+            background: #161822;
+            border-bottom: 1px solid #2a2d3a;
+        }
+        .tab-nav button {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: #6a6f80;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-nav button.active {
+            color: #5ba4cf;
+            border-bottom-color: #5ba4cf;
+        }
+
+        /* Tab content */
+        .tab-content { display: none; padding: 12px 16px; overflow-y: auto; }
+        .tab-content.active { display: block; }
+        #tab-schedule { max-height: calc(100vh - 90px); }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            margin-left: 40px;
+            border-left: 1px solid #2a2d3a;
+        }
+        .timeline-hours {
+            position: relative;
+            /* 6am to 11pm = 17 hours, each hour = 50px */
+            height: 850px;
+        }
+        .hour-mark {
+            position: absolute;
+            left: -40px;
+            width: 38px;
+            text-align: right;
+            font-size: 10px;
+            color: #4a4d5a;
+            transform: translateY(-6px);
+        }
+        .hour-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #1c1e2a;
+        }
+        .tl-block {
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            overflow: hidden;
+            z-index: 2;
+            min-height: 16px;
+        }
+        .tl-block { display: flex; align-items: flex-start; gap: 8px; }
+        .tl-block .tl-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tl-block .tl-time { font-size: 10px; opacity: 0.7; white-space: nowrap; }
+        .block-personal { background: #2a4a6b; }
+        .block-work { background: #3a3a3a; border: 1px dashed #666; }
+        .block-work-tentative { background: #2a2a2a; border: 1px dashed #555; }
+        .block-exercise { background: #3a5a2a; }
+        .block-dinner { background: #5a2a5a; }
+        .block-school { background: #8a5a1a; color: #111; }
+        .block-lisa { background: #5a2a4a; opacity: 0.7; }
+        .block-hugo { background: #5a5a1a; opacity: 0.7; }
+        .block-holiday { background: #1a4a3a; }
+        .block-shopping { background: #2a5a5a; }
+
+        /* Now line */
+        .now-line {
+            position: absolute;
+            left: -6px;
+            right: 0;
+            height: 2px;
+            background: #e05050;
+            z-index: 5;
+        }
+        .now-dot {
+            position: absolute;
+            left: -6px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e05050;
+            transform: translate(-1px, -3px);
+            z-index: 6;
+        }
+        .no-events { color: #6a6f80; font-style: italic; padding: 20px 0; text-align: center; }
+
+        /* Habits */
+        .habits-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .habit-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #1c1e2a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #2a2d3a;
+        }
+        .habit-item.checked {
+            border-color: #5ba4cf;
+            background: #1a2a3a;
+        }
+        .habit-item input[type="checkbox"] { display: none; }
+        .habit-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #4a4d5a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+        .habit-item.checked .habit-check {
+            border-color: #5ba4cf;
+            background: #5ba4cf;
+            color: #fff;
+        }
+
+        /* Water */
+        .water-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #1c1e2a;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #2a2d3a;
+        }
+        .water-row button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #4a4d5a;
+            background: none;
+            color: #e0e0e0;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .water-count {
+            font-size: 20px;
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Mood */
+        .mood-section { margin-top: 16px; }
+        .mood-section h4 { font-size: 12px; color: #6a6f80; margin-bottom: 8px; text-transform: uppercase; }
+        .mood-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .mood-btn {
+            font-size: 24px;
+            background: none;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .mood-btn.selected { border-color: #5ba4cf; background: #1a2a3a; }
+
+        /* Weather */
+        .weather-today {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .weather-card {
+            flex: 1;
+            padding: 12px;
+            background: #1c1e2a;
+            border-radius: 8px;
+            border: 1px solid #2a2d3a;
+            text-align: center;
+        }
+        .weather-card .day-name { font-size: 12px; color: #6a6f80; text-transform: uppercase; margin-bottom: 4px; }
+        .weather-card .temp { font-size: 22px; font-weight: 600; }
+        .weather-card .rain { font-size: 12px; color: #8890a0; margin-top: 4px; }
+        .weather-card .icon { font-size: 24px; }
+
+        /* Rain chart */
+        .rain-section { margin-top: 8px; }
+        .rain-section h4 { font-size: 12px; color: #6a6f80; margin-bottom: 8px; text-transform: uppercase; }
+        #m-rain-chart {
+            height: 80px;
+            background: #1c1e2a;
+            border-radius: 8px;
+            border: 1px solid #2a2d3a;
+            position: relative;
+            overflow: hidden;
+        }
+        .rain-bar {
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to top, #4a90d9, #5ba4cf);
+            opacity: 0.8;
+        }
+        .rain-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #6a6f80;
+            margin-top: 4px;
+        }
+        .rain-night {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <h1>Lifeblock</h1>
+        <div class="date-nav">
+            <button id="prev-day">&lsaquo;</button>
+            <span class="date-label" id="date-label"></span>
+            <button id="next-day">&rsaquo;</button>
+        </div>
+    </div>
+
+    <div class="tab-nav">
+        <button class="active" data-tab="schedule">Today</button>
+        <button data-tab="habits">Habits</button>
+    </div>
+
+    <div id="tab-schedule" class="tab-content active">
+        <div class="timeline">
+            <div class="timeline-hours" id="timeline">
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-habits" class="tab-content">
+        <!-- Water -->
+        <div class="water-row">
+            <span>💧</span>
+            <button onclick="adjustWater(-1)">−</button>
+            <span class="water-count" id="water-count">0</span>
+            <button onclick="adjustWater(1)">+</button>
+        </div>
+
+        <!-- Habit toggles -->
+        <div class="habits-grid" id="habits-grid"></div>
+
+        <!-- Mood -->
+        <div class="mood-section">
+            <h4>Mood</h4>
+            <div class="mood-row" id="mood-row"></div>
+        </div>
+
+        <!-- Weather -->
+        <div style="margin-top: 20px;">
+            <h4 style="font-size: 12px; color: #6a6f80; text-transform: uppercase; margin-bottom: 8px;">Weather</h4>
+            <div class="weather-today" id="weather-cards"></div>
+        </div>
+
+        <!-- Rain chart -->
+        <div class="rain-section">
+            <h4>Rain — Next 48 Hours</h4>
+            <div id="m-rain-chart"></div>
+            <div class="rain-labels" id="m-rain-labels"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+
+        const HABITS = [
+            { key: 'skincare', label: 'Skincare', icon: '✨' },
+            { key: 'exercised', label: 'Exercised', icon: '🏃' },
+            { key: 'got_outside', label: 'Got outside', icon: '🌳' },
+            { key: 'stretched', label: 'Stretched', icon: '🧘' },
+            { key: 'nytimes', label: 'NYTimes', icon: '📰' },
+        ];
+
+        const MOODS = [
+            { name: 'stressed', emoji: '😰' },
+            { name: 'angry', emoji: '😡' },
+            { name: 'overwhelmed', emoji: '🤯' },
+            { name: 'sad', emoji: '😢' },
+            { name: 'tired', emoji: '😴' },
+            { name: 'neutral', emoji: '😐' },
+            { name: 'focused', emoji: '🌀' },
+            { name: 'happy', emoji: '😊' },
+            { name: 'fired_up', emoji: '🔥' },
+        ];
+
+        // Tab switching
+        document.querySelectorAll('.tab-nav button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Date navigation
+        document.getElementById('prev-day').addEventListener('click', () => { currentDate.setDate(currentDate.getDate() - 1); loadAll(); });
+        document.getElementById('next-day').addEventListener('click', () => { currentDate.setDate(currentDate.getDate() + 1); loadAll(); });
+
+        function fmt(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        function dayName(d) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const tmrw = new Date(today); tmrw.setDate(tmrw.getDate() + 1);
+            if (fmt(d) === fmt(today)) return 'Today';
+            if (fmt(d) === fmt(tmrw)) return 'Tomorrow';
+            return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        function getBlockClass(event) {
+            const cat = event.category || '';
+            const title = (event.title || '').toLowerCase();
+            if (cat === 'lisa') return 'block-lisa';
+            if (cat === 'hugo') return 'block-hugo';
+            if (title.includes('work meeting')) return event.busyStatus === 'TENTATIVE' ? 'block-work-tentative' : 'block-work';
+            if (cat === 'exercise') return 'block-exercise';
+            if (title.includes('cook dinner')) return 'block-dinner';
+            if (title.includes('school') || title.includes('pick')) return 'block-school';
+            if (cat === 'holiday') return 'block-holiday';
+            if (title.includes('shopping') || title.includes('food')) return 'block-shopping';
+            return 'block-personal';
+        }
+
+        const START_HOUR = 6;
+        const END_HOUR = 23;
+        const HOUR_PX = 50;
+        const TOTAL_HOURS = END_HOUR - START_HOUR;
+
+        function timeToY(timeStr) {
+            // timeStr like "14:30" or from ISO
+            const parts = timeStr.split(':');
+            const h = parseInt(parts[0]);
+            const m = parseInt(parts[1] || 0);
+            return ((h - START_HOUR) + m / 60) * HOUR_PX;
+        }
+
+        function loadSchedule() {
+            const tl = document.getElementById('timeline');
+            // Draw hour lines
+            let html = '';
+            for (let h = START_HOUR; h <= END_HOUR; h++) {
+                const y = (h - START_HOUR) * HOUR_PX;
+                const label = h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
+                html += `<div class="hour-mark" style="top:${y}px">${label}</div>`;
+                html += `<div class="hour-line" style="top:${y}px"></div>`;
+            }
+
+            const ds = fmt(currentDate);
+            const startISO = ds + 'T00:00:00';
+            const endD = new Date(currentDate);
+            endD.setDate(endD.getDate() + 1);
+            const endISO = fmt(endD) + 'T00:00:00';
+
+            fetch(`/api/events?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`)
+                .then(r => r.json())
+                .then(events => {
+                    events.forEach(ev => {
+                        const startTime = ev.start.includes('T') ? ev.start.split('T')[1].slice(0, 5) : '06:00';
+                        const endTime = ev.end.includes('T') ? ev.end.split('T')[1].slice(0, 5) : '07:00';
+                        const top = timeToY(startTime);
+                        const bottom = timeToY(endTime);
+                        const height = Math.max(bottom - top, 16);
+                        const cls = getBlockClass(ev);
+                        const title = ev.title || 'Block';
+                        const notes = ev.notes ? ` · ${ev.notes}` : '';
+
+                        html += `<div class="tl-block ${cls}" style="top:${top}px;height:${height}px">
+                            <div class="tl-time">${startTime} – ${endTime}</div>
+                            <div class="tl-title">${title}${notes}</div>
+                        </div>`;
+                    });
+
+                    // Now line
+                    const now = new Date();
+                    if (fmt(currentDate) === fmt(now)) {
+                        const nowY = timeToY(now.getHours() + ':' + now.getMinutes());
+                        if (nowY >= 0 && nowY <= TOTAL_HOURS * HOUR_PX) {
+                            html += `<div class="now-line" style="top:${nowY}px"></div>`;
+                            html += `<div class="now-dot" style="top:${nowY}px"></div>`;
+                        }
+                    }
+
+                    tl.innerHTML = html;
+
+                    // Auto-scroll to now or first event
+                    if (fmt(currentDate) === fmt(now)) {
+                        const nowY = timeToY(now.getHours() + ':' + now.getMinutes());
+                        const container = document.getElementById('tab-schedule');
+                        container.scrollTop = Math.max(0, nowY - 100);
+                    }
+                });
+        }
+
+        // Habits
+        let checkinData = {};
+
+        function loadHabits() {
+            fetch('/api/checkin?date=' + fmt(currentDate))
+                .then(r => r.json())
+                .then(data => {
+                    checkinData = data;
+                    renderHabits();
+                    renderMoods();
+                });
+        }
+
+        function renderHabits() {
+            const grid = document.getElementById('habits-grid');
+            grid.innerHTML = HABITS.map(h => {
+                const checked = checkinData[h.key] ? 'checked' : '';
+                return `<div class="habit-item ${checked}" onclick="toggleHabit('${h.key}', this)">
+                    <div class="habit-check">${checked ? '✓' : ''}</div>
+                    <span>${h.icon} ${h.label}</span>
+                </div>`;
+            }).join('');
+            document.getElementById('water-count').textContent = checkinData.water || 0;
+        }
+
+        function renderMoods() {
+            const row = document.getElementById('mood-row');
+            const todayMoods = checkinData.moods || [];
+            row.innerHTML = MOODS.map(m => {
+                const sel = todayMoods.includes(m.name) ? 'selected' : '';
+                return `<button class="mood-btn ${sel}" onclick="setMood('${m.name}', this)">${m.emoji}</button>`;
+            }).join('');
+        }
+
+        function toggleHabit(key, el) {
+            const isChecked = el.classList.contains('checked');
+            const value = !isChecked;
+            const payload = {};
+            payload[key] = value;
+            payload.date = fmt(currentDate);
+
+            fetch('/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                checkinData = data;
+                renderHabits();
+            });
+        }
+
+        function adjustWater(delta) {
+            const current = checkinData.water || 0;
+            const newVal = Math.max(0, current + delta);
+            fetch('/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ water: newVal, date: fmt(currentDate) })
+            }).then(r => r.json()).then(data => {
+                checkinData = data;
+                renderHabits();
+            });
+        }
+
+        function setMood(name, btn) {
+            fetch('/api/checkin/mood', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mood: name, date: fmt(currentDate) })
+            }).then(r => r.json()).then(() => {
+                // Toggle selection
+                if (btn.classList.contains('selected')) {
+                    btn.classList.remove('selected');
+                } else {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+
+        // Weather
+        function loadWeather() {
+            fetch('/api/weather')
+                .then(r => r.json())
+                .then(days => {
+                    const cards = document.getElementById('weather-cards');
+                    const today = fmt(currentDate);
+                    const tmrw = new Date(currentDate);
+                    tmrw.setDate(tmrw.getDate() + 1);
+                    const tmrwStr = fmt(tmrw);
+
+                    const relevant = days.filter(d => d.date === today || d.date === tmrwStr);
+                    if (!relevant.length) {
+                        cards.innerHTML = '<p style="color:#6a6f80">No weather data</p>';
+                        return;
+                    }
+
+                    cards.innerHTML = relevant.map(d => {
+                        const isToday = d.date === today;
+                        const label = isToday ? 'Today' : 'Tomorrow';
+                        const icon = d.rain_chance > 50 ? '🌧' : d.rain_chance > 20 ? '🌥' : '☀️';
+                        const rain = d.rain_chance > 0 ? `${d.rain_chance}% 🌧` : '';
+                        return `<div class="weather-card">
+                            <div class="day-name">${label}</div>
+                            <div class="icon">${icon}</div>
+                            <div class="temp">${d.temp_max || d.temp}°</div>
+                            <div class="rain">${rain}</div>
+                        </div>`;
+                    }).join('');
+                });
+        }
+
+        function loadRainChart() {
+            fetch('/api/weather/hourly')
+                .then(r => r.json())
+                .then(hours => {
+                    const chart = document.getElementById('m-rain-chart');
+                    const labels = document.getElementById('m-rain-labels');
+                    if (!hours || !hours.length) {
+                        chart.innerHTML = '<p style="color:#6a6f80;padding:20px;text-align:center">No data</p>';
+                        return;
+                    }
+
+                    const barWidth = 100 / hours.length;
+                    let barsHtml = '';
+                    const maxProb = Math.max(...hours.map(h => h.precipitation_probability || 0), 10);
+
+                    // Add night shading
+                    hours.forEach((h, i) => {
+                        const hour = new Date(h.datetime).getHours();
+                        if (hour < 6 || hour >= 20) {
+                            barsHtml += `<div class="rain-night" style="left:${i * barWidth}%;width:${barWidth}%"></div>`;
+                        }
+                    });
+
+                    hours.forEach((h, i) => {
+                        const prob = h.precipitation_probability || 0;
+                        const height = (prob / maxProb) * 100;
+                        barsHtml += `<div class="rain-bar" style="left:${i * barWidth}%;width:${barWidth}%;height:${height}%"></div>`;
+                    });
+
+                    chart.innerHTML = barsHtml;
+
+                    // Labels
+                    const labelPoints = [0, Math.floor(hours.length / 4), Math.floor(hours.length / 2), Math.floor(3 * hours.length / 4), hours.length - 1];
+                    labels.innerHTML = labelPoints.map(i => {
+                        const h = hours[i];
+                        if (!h) return '';
+                        const dt = new Date(h.datetime);
+                        const dayLbl = fmt(dt) === fmt(new Date()) ? 'Today' : fmt(dt) === fmt(new Date(Date.now() + 86400000)) ? 'Tmrw' : dt.toLocaleDateString('en-AU', { weekday: 'short' });
+                        return `<span>${dayLbl} ${dt.getHours().toString().padStart(2, '0')}:00</span>`;
+                    }).join('');
+                });
+        }
+
+        function loadAll() {
+            document.getElementById('date-label').textContent = dayName(currentDate) +
+                (dayName(currentDate) === 'Today' || dayName(currentDate) === 'Tomorrow' ? ', ' + currentDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '');
+            loadSchedule();
+            loadHabits();
+            loadWeather();
+            loadRainChart();
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>
