@@ -377,7 +377,7 @@
             const lastDismissed = localStorage.getItem('water_gate_dismissed');
             if (lastDismissed) {
                 const elapsed = Date.now() - parseInt(lastDismissed);
-                if (elapsed < 90 * 60 * 1000) return;
+                if (elapsed < 60 * 60 * 1000) return;
             }
             document.getElementById('water-gate').style.display = 'flex';
         }

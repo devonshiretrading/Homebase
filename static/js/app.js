@@ -13,7 +13,7 @@ function checkWaterGate() {
     if (lastDismissed) {
         const elapsed = Date.now() - parseInt(lastDismissed);
         // Show every 90 minutes
-        if (elapsed < 90 * 60 * 1000) return;
+        if (elapsed < 60 * 60 * 1000) return;
     }
     document.getElementById('water-gate').style.display = 'flex';
 }
