@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Week of {{ week_start.strftime('%d %b') }} — Lifeblock{% endblock %}
+
+{% block content %}
+<div class="week-layout">
+
+    <!-- LEFT SIDEBAR: Toggles & Quick Add -->
+    <aside class="week-sidebar">
+        <h3>This Week</h3>
+
+        <div class="week-nav">
+            <a href="/week/{{ (week_start - timedelta(days=7)).isoformat() }}" class="btn btn-sm">&larr; Prev</a>
+            <a href="/" class="btn btn-sm">Today</a>
+            <a href="/week/{{ (week_start + timedelta(days=7)).isoformat() }}" class="btn btn-sm">Next &rarr;</a>
+        </div>
+
+        <!-- Weekly toggles -->
+        <div class="toggles-section">
+            <h4>Weekly Decisions</h4>
+            <div id="toggles-container">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Quick add block -->
+        <!-- Quick add removed — use click-drag on calendar -->
+
+        <!-- Weather strip -->
+        <div class="weather-section">
+            <h4>Weather This Week</h4>
+            <div id="weather-strip">
+                <p class="muted">Loading...</p>
+            </div>
+        </div>
+
+        <!-- 48h rain -->
+        <div class="rain-chart-section">
+            <h4>Rain — Next 48 Hours</h4>
+            <div id="rain-chart">
+                <p class="muted">Loading...</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN: Calendar + Bottom Panel -->
+    <div class="week-main">
+        <div id="calendar"></div>
+
+        <!-- Insights Panel -->
+        <div class="insights-panel">
+            <div class="insights-header">
+                <select id="insights-select">
+                    <option value="running">Running</option>
+                    <option value="food">Food Shopping</option>
+                    <option value="habits">Habits</option>
+                </select>
+            </div>
+            <div id="insights-content">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const WEEK_START = '{{ week_start.isoformat() }}';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initWeekView(WEEK_START);
+    });
+</script>
+{% endblock %}

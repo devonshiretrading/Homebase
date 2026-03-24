@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Check-in — Lifeblock{% endblock %}
+
+{% block content %}
+<div class="checkin-container">
+    <h2>Evening Check-in</h2>
+    <p class="checkin-date">{{ date.strftime('%A, %d %B %Y') }}</p>
+
+    <form id="checkin-form" class="checkin-form">
+        <div class="checkin-grid">
+
+            <div class="checkin-item">
+                <label>
+                    <input type="checkbox" name="got_outside" {% if checkin and checkin.got_outside %}checked{% endif %}>
+                    <span class="checkin-label">🌳 Got outside</span>
+                </label>
+            </div>
+
+            <div class="checkin-item">
+                <label>
+                    <input type="checkbox" name="cooked_dinner" {% if checkin and checkin.cooked_dinner %}checked{% endif %}>
+                    <span class="checkin-label">🍳 Cooked dinner</span>
+                </label>
+            </div>
+
+            <div class="checkin-item">
+                <label>
+                    <input type="checkbox" name="exercised" {% if checkin and checkin.exercised %}checked{% endif %}>
+                    <span class="checkin-label">🏃 Exercised</span>
+                </label>
+            </div>
+
+            <div class="checkin-item">
+                <label>
+                    <input type="checkbox" name="stretched" {% if checkin and checkin.stretched %}checked{% endif %}>
+                    <span class="checkin-label">🙆 Stretched</span>
+                </label>
+            </div>
+
+            <div class="checkin-item">
+                <label>
+                    <input type="checkbox" name="skincare" {% if checkin and checkin.skincare %}checked{% endif %}>
+                    <span class="checkin-label">✨ Skincare</span>
+                </label>
+            </div>
+
+            <div class="checkin-item">
+                <label class="checkin-label">💧 Water (glasses)</label>
+                <div class="water-counter">
+                    <button type="button" onclick="adjustWater(-1)" class="btn btn-sm">-</button>
+                    <span id="water-count">{{ checkin.water_glasses if checkin and checkin.water_glasses else 0 }}</span>
+                    <button type="button" onclick="adjustWater(1)" class="btn btn-sm">+</button>
+                </div>
+            </div>
+
+            <div class="checkin-item">
+                <label class="checkin-label">📱 Screens off at</label>
+                <input type="time" name="screens_off_time"
+                       value="{{ checkin.screens_off_time.strftime('%H:%M') if checkin and checkin.screens_off_time else '' }}">
+            </div>
+
+            <div class="checkin-item">
+                <label class="checkin-label">😊 Mood</label>
+                <div class="mood-selector">
+                    {% for i in range(1, 6) %}
+                    <button type="button"
+                            class="mood-btn {% if checkin and checkin.mood == i %}active{% endif %}"
+                            data-mood="{{ i }}"
+                            onclick="setMood({{ i }})">
+                        {{ ['😫','😕','😐','🙂','😄'][i-1] }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <div class="checkin-notes">
+            <label class="checkin-label">Notes</label>
+            <textarea name="notes" rows="3" placeholder="Anything to note...">{{ checkin.notes if checkin and checkin.notes else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Check-in</button>
+        <span id="checkin-status" class="status-msg"></span>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CHECKIN_DATE = '{{ date.isoformat() }}';
+
+    document.getElementById('checkin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveCheckIn();
+    });
+</script>
+{% endblock %}
