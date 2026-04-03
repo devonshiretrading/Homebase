@@ -690,7 +690,18 @@
         loadAll();
 
         // Auto-refresh: schedule + now-line every 60s, weather every 15min
+        let lastCheckedDay = fmt(new Date());
         setInterval(() => {
+            const today = fmt(new Date());
+            if (today !== lastCheckedDay) {
+                // Day rolled over — jump to the new day
+                lastCheckedDay = today;
+                currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0);
+                loadAll();
+                checkWaterGate();
+                return;
+            }
             loadSchedule();
         }, 60 * 1000);
 

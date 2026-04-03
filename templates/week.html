@@ -71,6 +71,29 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         initWeekView(WEEK_START);
+
+        // Check every 60s if the week has changed (midnight crossing)
+        let lastCheckedDay = new Date().toISOString().slice(0, 10);
+        setInterval(() => {
+            const today = new Date();
+            const todayStr = today.toISOString().slice(0, 10);
+            if (todayStr !== lastCheckedDay) {
+                lastCheckedDay = todayStr;
+                // Calculate current week's Monday
+                const day = today.getDay();
+                const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - diff);
+                const mondayStr = monday.toISOString().slice(0, 10);
+                if (mondayStr !== WEEK_START) {
+                    // Week changed — redirect to current week
+                    window.location.href = '/week/' + mondayStr;
+                } else {
+                    // Same week, just refetch events to update "today" column highlighting
+                    if (typeof calendar !== 'undefined' && calendar) calendar.refetchEvents();
+                }
+            }
+        }, 60 * 1000);
     });
 </script>
 {% endblock %}
